@@ -1,48 +1,35 @@
 const categoryService = require("../services/categoryService");
 
-const getAll = async (req, res) => {
-  try {
-    const data = await categoryService.getAll();
-    return res.json({ data });
-  } catch (err) {
-    return res.status(500).json({ message: err.message });
-  }
-};
+// Helper to handle async route handlers and eliminate try-catch boilerplate
+const asyncHandler = (fn) => (req, res, next) => 
+  Promise.resolve(fn(req, res, next)).catch(next);
 
-const getById = async (req, res) => {
-  try {
-    const data = await categoryService.getById(req.params.id);
-    return res.json({ data });
-  } catch (err) {
-    return res.status(404).json({ message: err.message });
-  }
-};
+const getAll = asyncHandler(async (req, res) => {
+  const data = await categoryService.getAll();
+  res.json({ data });
+});
 
-const create = async (req, res) => {
-  try {
-    const data = await categoryService.create(req.body);
-    return res.status(201).json({ message: "Category created", data });
-  } catch (err) {
-    return res.status(400).json({ message: err.message });
+const getById = asyncHandler(async (req, res) => {
+  const data = await categoryService.getById(req.params.id);
+  if (!data) {
+    return res.status(404).json({ message: "Category not found" });
   }
-};
+  res.json({ data });
+});
 
-const update = async (req, res) => {
-  try {
-    const data = await categoryService.update(req.params.id, req.body);
-    return res.json({ message: "Category updated", data });
-  } catch (err) {
-    return res.status(400).json({ message: err.message });
-  }
-};
+const create = asyncHandler(async (req, res) => {
+  const data = await categoryService.create(req.body);
+  res.status(201).json({ message: "Category created", data });
+});
 
-const remove = async (req, res) => {
-  try {
-    const data = await categoryService.remove(req.params.id);
-    return res.json(data);
-  } catch (err) {
-    return res.status(400).json({ message: err.message });
-  }
-};
+const update = asyncHandler(async (req, res) => {
+  const data = await categoryService.update(req.params.id, req.body);
+  res.json({ message: "Category updated", data });
+});
+
+const remove = asyncHandler(async (req, res) => {
+  const data = await categoryService.remove(req.params.id);
+  res.json({ message: "Category deleted", data });
+});
 
 module.exports = { getAll, getById, create, update, remove };

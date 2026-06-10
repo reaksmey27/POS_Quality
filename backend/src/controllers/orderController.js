@@ -1,32 +1,32 @@
 const orderService = require("../services/orderService");
 
-const create = async (req, res) => {
-  try {
-    const { items } = req.body;
-    const cashier_id = req.user.id;
-    const data = await orderService.createOrder({ items, cashier_id });
-    return res.status(201).json({ message: "Order created successfully", data });
-  } catch (err) {
-    return res.status(400).json({ message: err.message });
-  }
-};
+// Helper to handle async route handlers and eliminate try-catch boilerplate
+const asyncHandler = (fn) => (req, res, next) => 
+  Promise.resolve(fn(req, res, next)).catch(next);
 
-const getAll = async (req, res) => {
-  try {
-    const data = await orderService.getAll();
-    return res.json({ data });
-  } catch (err) {
-    return res.status(500).json({ message: err.message });
-  }
-};
+const create = asyncHandler(async (req, res) => {
+  const { items } = req.body;
+  const cashier_id = req.user.id;
 
-const getById = async (req, res) => {
-  try {
-    const data = await orderService.getById(req.params.id);
-    return res.json({ data });
-  } catch (err) {
-    return res.status(404).json({ message: err.message });
+  if (!items || items.length === 0) {
+    return res.status(400).json({ message: "Order must contain at least one item" });
   }
-};
+
+  const data = await orderService.createOrder({ items, cashier_id });
+  res.status(201).json({ message: "Order created successfully", data });
+});
+
+const getAll = asyncHandler(async (req, res) => {
+  const data = await orderService.getAll();
+  res.json({ data });
+});
+
+const getById = asyncHandler(async (req, res) => {
+  const data = await orderService.getById(req.params.id);
+  if (!data) {
+    return res.status(404).json({ message: "Order not found" });
+  }
+  res.json({ data });
+});
 
 module.exports = { create, getAll, getById };

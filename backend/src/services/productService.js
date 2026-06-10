@@ -3,52 +3,74 @@ const { AppDataSource } = require("../config/data-source");
 const getRepo = () => AppDataSource.getRepository("Product");
 
 const getAll = async () => {
-  return await getRepo().find({
+  return getRepo().find({
     relations: ["category"],
     order: { id: "DESC" },
   });
 };
 
 const getById = async (id) => {
+  const parsedId = parseInt(id, 10);
+  if (isNaN(parsedId)) throw new Error("Invalid product ID format");
+
   const product = await getRepo().findOne({
-    where: { id: parseInt(id) },
+    where: { id: parsedId },
     relations: ["category"],
   });
+  
   if (!product) throw new Error("Product not found");
   return product;
 };
 
 const create = async ({ name, price, qty, category_id, image }) => {
-  if (!name || price === undefined)
-    throw new Error("Name and price are required");
-  if (isNaN(price) || parseFloat(price) < 0) throw new Error("Invalid price");
+  if (!name?.trim()) throw new Error("Name is required");
+  if (price === undefined || price === null || isNaN(price) || parseFloat(price) < 0) {
+    throw new Error("Valid price is required");
+  }
 
   const product = getRepo().create({
-    name,
+    name: name.trim(),
     price: parseFloat(price),
-    qty: parseInt(qty) || 0,
-    category_id: category_id ? parseInt(category_id) : null,
-    image: image ? image : null,
+    qty: parseInt(qty, 10) || 0,
+    category_id: category_id ? parseInt(category_id, 10) : null,
+    image: image || null,
   });
 
-  return await getRepo().save(product);
+  return getRepo().save(product);
 };
 
 const update = async (id, { name, price, qty, category_id, image }) => {
   const product = await getById(id);
-  if (name) product.name = name;
-  if (price !== undefined) product.price = parseFloat(price);
-  if (qty !== undefined) product.qty = parseInt(qty);
-  if (category_id !== undefined)
-    product.category_id = category_id ? parseInt(category_id) : null;
-  if (image !== undefined) product.image = image ? image : null;
-  return await getRepo().save(product);
+
+  if (name !== undefined) product.name = name.trim();
+  
+  if (price !== undefined) {
+    if (isNaN(price) || parseFloat(price) < 0) throw new Error("Invalid price value");
+    product.price = parseFloat(price);
+  }
+  
+  if (qty !== undefined) {
+    const parsedQty = parseInt(qty, 10);
+    if (isNaN(parsedQty) || parsedQty < 0) throw new Error("Invalid quantity value");
+    product.qty = parsedQty;
+  }
+  
+  if (category_id !== undefined) {
+    product.category_id = category_id ? parseInt(category_id, 10) : null;
+  }
+  
+  if (image !== undefined) {
+    product.image = image || null;
+  }
+
+  return getRepo().save(product);
 };
 
 const remove = async (id) => {
   const product = await getById(id);
   await getRepo().remove(product);
-  return { message: "Product deleted" };
+
+  return product;
 };
 
 module.exports = { getAll, getById, create, update, remove };

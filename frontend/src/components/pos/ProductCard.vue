@@ -1,17 +1,14 @@
 <template>
-  <div
-    class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm flex flex-col group transition-all duration-150 relative"
-  >
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm flex flex-col group transition-all duration-150 relative">
+    
     <span
       v-if="cartQty > 0"
-      class="absolute top-2.5 right-2.5 z-10 bg-indigo-600 text-white font-bold text-xs px-2.5 py-1 rounded-full shadow-sm animate-in zoom-in-75 duration-100"
+      class="absolute top-2.5 right-2.5 z-10 bg-indigo-600 text-white font-bold text-xs px-2.5 py-1 rounded-full shadow-sm animate-in zoom-in-75 duration-100 select-none"
     >
       {{ cartQty }} selected
     </span>
 
-    <div
-      class="aspect-square w-full bg-slate-50 dark:bg-slate-950 flex items-center justify-center border-b border-slate-100 dark:border-slate-900 p-6 relative overflow-hidden group"
-    >
+    <div class="aspect-square w-full bg-slate-50 dark:bg-slate-950 flex items-center justify-center border-b border-slate-100 dark:border-slate-900 p-6 relative overflow-hidden">
       <img
         v-if="product.image"
         :src="product.image"
@@ -26,14 +23,10 @@
 
     <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
       <div>
-        <h4
-          class="font-semibold text-slate-950 dark:text-white line-clamp-1 text-sm tracking-tight"
-        >
+        <h4 class="font-semibold text-slate-950 dark:text-white line-clamp-1 text-sm tracking-tight">
           {{ product.name }}
         </h4>
-        <p
-          class="text-xs text-slate-400 dark:text-slate-500 line-clamp-2 mt-0.5 min-h-8"
-        >
+        <p class="text-xs text-slate-400 dark:text-slate-500 line-clamp-2 mt-0.5 min-h-8">
           {{ product.description || "No description provided." }}
         </p>
       </div>
@@ -41,26 +34,22 @@
       <div class="flex items-center justify-between pt-1">
         <div class="flex flex-col">
           <span class="text-base font-bold text-slate-900 dark:text-slate-100">
-            ${{ parseFloat(product.price).toFixed(2) }}
+            ${{ formatCurrency(product.price) }}
           </span>
           <span
             class="text-[10px] font-bold uppercase tracking-wider mt-0.5"
-            :class="
-              product.qty > 0
-                ? 'text-emerald-600 dark:text-emerald-400'
-                : 'text-rose-600 dark:text-rose-400'
-            "
+            :class="stockStatusClasses"
           >
-            {{ product.qty > 0 ? `${product.qty} In Stock` : "Out of Stock" }}
+            {{ stockStatusLabel }}
           </span>
         </div>
 
         <button
-          @click="$emit('add-to-cart', product)"
           type="button"
-          :disabled="product.qty === 0 || cartQty >= product.qty"
+          @click="handleAddToCart"
+          :disabled="isButtonDisabled"
           class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-indigo-600 dark:hover:bg-indigo-600 hover:text-white dark:hover:text-white disabled:bg-slate-50 dark:disabled:bg-slate-950 disabled:text-slate-300 dark:disabled:text-slate-800 cursor-pointer disabled:cursor-not-allowed transition-colors"
-          title="Add item to checkout basket"
+          :aria-label="`Add ${product.name} to checkout basket`"
         >
           <PlusIcon class="w-4 h-4" />
         </button>
@@ -70,12 +59,41 @@
 </template>
 
 <script setup>
+import { computed } from "vue";
 import { PackageIcon, PlusIcon } from "lucide-vue-next";
 
-defineProps({
+const props = defineProps({
   product: { type: Object, required: true },
   cartQty: { type: Number, default: 0 },
 });
 
-defineEmits(["add-to-cart"]);
+const emit = defineEmits(["add-to-cart"]);
+
+const hasStock = computed(() => (parseInt(props.product?.qty, 10) || 0) > 0);
+
+const isButtonDisabled = computed(() => {
+  const stockAvailable = parseInt(props.product?.qty, 10) || 0;
+  return stockAvailable === 0 || props.cartQty >= stockAvailable;
+});
+
+const stockStatusLabel = computed(() => {
+  return hasStock.value ? `${props.product.qty} In Stock` : "Out of Stock";
+});
+
+const stockStatusClasses = computed(() => {
+  return hasStock.value 
+    ? "text-emerald-600 dark:text-emerald-400" 
+    : "text-rose-600 dark:text-rose-400";
+});
+
+// String Format Parsers
+const formatCurrency = (value) => {
+  const numericValue = parseFloat(value);
+  return Number.isFinite(numericValue) ? numericValue.toFixed(2) : "0.00";
+};
+
+const handleAddToCart = () => {
+  if (isButtonDisabled.value) return;
+  emit("add-to-cart", props.product);
+};
 </script>

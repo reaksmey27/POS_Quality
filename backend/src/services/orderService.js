@@ -1,56 +1,59 @@
 const { AppDataSource } = require("../config/data-source");
 
 const getOrderRepo = () => AppDataSource.getRepository("Order");
-const getItemRepo = () => AppDataSource.getRepository("OrderItem");
-const getProductRepo = () => AppDataSource.getRepository("Product");
 
 const createOrder = async ({ items, cashier_id }) => {
-  if (!items || !Array.isArray(items) || items.length === 0) {
+  if (!Array.isArray(items) || items.length === 0) {
     throw new Error("Order must have at least one item");
   }
 
-  return await AppDataSource.transaction(async (manager) => {
+  return AppDataSource.transaction(async (manager) => {
     const productRepo = manager.getRepository("Product");
     const orderRepo = manager.getRepository("Order");
     const itemRepo = manager.getRepository("OrderItem");
 
-    let total_price = 0;
+    // 1. Fetch all products in a single database query instead of looping findOne
+    const productIds = items.map(item => parseInt(item.product_id, 10)).filter(Boolean);
+    const dbProducts = await productRepo.findByIds(productIds);
+    const productMap = new Map(dbProducts.map(p => [p.id, p]));
+
+    let totalPrice = 0;
     const resolvedItems = [];
 
-    // Validate stock and calculate total
+    // 2. Validate stock allocations and process line-item calculations
     for (const item of items) {
-      const product = await productRepo.findOne({ where: { id: parseInt(item.product_id) } });
-      if (!product) throw new Error(`Product ${item.product_id} not found`);
+      const productId = parseInt(item.product_id, 10);
+      const product = productMap.get(productId);
+      
+      if (!product) throw new Error(`Product ID ${item.product_id} not found`);
 
-      const qty = parseInt(item.qty);
-      if (!qty || qty <= 0) throw new Error(`Invalid quantity for product ${product.name}`);
+      const qty = parseInt(item.qty, 10);
+      if (isNaN(qty) || qty <= 0) throw new Error(`Invalid quantity for product "${product.name}"`);
       if (product.qty < qty) {
         throw new Error(`Insufficient stock for "${product.name}". Available: ${product.qty}`);
       }
 
-      total_price += parseFloat(product.price) * qty;
+      totalPrice += parseFloat(product.price) * qty;
+      
+      // Update the local object pointer reference directly
+      product.qty -= qty; 
+      
       resolvedItems.push({ product, qty, price: parseFloat(product.price) });
     }
 
-    // Create order
-    const order = orderRepo.create({ total_price, cashier_id });
+    // 3. Persist the parent Order resource
+    const order = orderRepo.create({ total_price: totalPrice, cashier_id });
     await orderRepo.save(order);
 
-    // Save order items and reduce stock
-    for (const { product, qty, price } of resolvedItems) {
-      const orderItem = itemRepo.create({
-        order_id: order.id,
-        product_id: product.id,
-        qty,
-        price,
-      });
-      await itemRepo.save(orderItem);
+    // 4. Batch-save the Order items and batch-update the mutated product stocks
+    const orderItemEntities = resolvedItems.map(({ product, qty, price }) => 
+      itemRepo.create({ order_id: order.id, product_id: product.id, qty, price })
+    );
+    await itemRepo.save(orderItemEntities);
+    await productRepo.save(dbProducts); // Saves all stock variations at once
 
-      product.qty -= qty;
-      await productRepo.save(product);
-    }
-
-    return await orderRepo.findOne({
+    // 5. Return the hydrated order tree structure
+    return orderRepo.findOne({
       where: { id: order.id },
       relations: ["items", "items.product", "cashier"],
     });
@@ -58,17 +61,21 @@ const createOrder = async ({ items, cashier_id }) => {
 };
 
 const getAll = async () => {
-  return await getOrderRepo().find({
+  return getOrderRepo().find({
     relations: ["items", "items.product", "cashier"],
     order: { id: "DESC" },
   });
 };
 
 const getById = async (id) => {
+  const parsedId = parseInt(id, 10);
+  if (isNaN(parsedId)) throw new Error("Invalid order ID format");
+
   const order = await getOrderRepo().findOne({
-    where: { id: parseInt(id) },
+    where: { id: parsedId },
     relations: ["items", "items.product", "cashier"],
   });
+  
   if (!order) throw new Error("Order not found");
   return order;
 };

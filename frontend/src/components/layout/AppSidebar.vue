@@ -8,7 +8,7 @@
       </div>
     </div>
 
-    <nav class="flex-1 p-4 space-y-4 overflow-y-auto">
+    <nav class="flex-1 p-4 space-y-4 overflow-y-auto" aria-label="Main Navigation">
       <div v-for="section in navigationMenu" :key="section.title" class="space-y-1">
         <div 
           v-if="section.title && section.items.length" 
@@ -60,10 +60,10 @@
         </div>
 
         <button
-          @click="themeStore.toggleTheme"
           type="button"
+          @click="themeStore.toggleTheme"
           class="p-2 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer flex items-center justify-center shrink-0"
-          :title="themeStore.isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+          :aria-label="themeStore.isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
         >
           <SunIcon v-if="themeStore.isDark" class="w-4 h-4 text-amber-500" />
           <MoonIcon v-else class="w-4 h-4 text-slate-500" />
@@ -71,8 +71,8 @@
       </div>
 
       <button
-        @click="emit('logout')"
         type="button"
+        @click="handleLogout"
         class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold border border-slate-200 dark:border-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-slate-700 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 transition-colors cursor-pointer"
       >
         <LogOutIcon class="w-4 h-4" />
@@ -115,40 +115,33 @@ const navigationMenu = computed(() => {
       title: "",
       items: [
         { to: "/dashboard", label: "Dashboard", icon: BarChart3Icon },
-        { 
-          to: "/pos", 
-          label: "Cashier POS", 
-          icon: ShoppingCartIcon,
-          badge: false
-        },
+        { to: "/pos", label: "Cashier POS", icon: ShoppingCartIcon, badge: false },
       ]
     }
   ];
 
   if (auth.canManage) {
-    const managementItems = [
-      { 
-        to: "/products", 
-        label: "Products", 
-        icon: PackageIcon,
-        badge: true,
-        badgeValue: lowStockCount.value,
-        badgeClass: "bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200/40 dark:border-none"
-      },
-      { to: "/categories", label: "Categories", icon: FolderOpenIcon },
-      { 
-        to: "/orders", 
-        label: "Orders", 
-        icon: ClipboardListIcon,
-        badge: true,
-        badgeValue: pendingOrdersCount.value,
-        badgeClass: "bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400 border border-indigo-200/40 dark:border-none"
-      }
-    ];
-    
     sections.push({
       title: "Management",
-      items: managementItems
+      items: [
+        { 
+          to: "/products", 
+          label: "Products", 
+          icon: PackageIcon,
+          badge: true,
+          badgeValue: lowStockCount.value,
+          badgeClass: "bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200/40 dark:border-none"
+        },
+        { to: "/categories", label: "Categories", icon: FolderOpenIcon },
+        { 
+          to: "/orders", 
+          label: "Orders", 
+          icon: ClipboardListIcon,
+          badge: true,
+          badgeValue: pendingOrdersCount.value,
+          badgeClass: "bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400 border border-indigo-200/40 dark:border-none"
+        }
+      ]
     });
   }
 
@@ -164,18 +157,26 @@ const navigationMenu = computed(() => {
   return sections;
 });
 
+const handleLogout = () => {
+  emit("logout");
+};
+
 onMounted(async () => {
   try {
-    const [pRes, oRes] = await Promise.all([
-      api.get("/products"),
-      auth.canManage ? api.get("/orders") : Promise.resolve({ data: { data: [] } })
-    ]);
+    const requests = [api.get("/products")];
+    if (auth.canManage) {
+      requests.push(api.get("/orders"));
+    }
 
-    const items = pRes.data?.data || [];
-    lowStockCount.value = items.filter(p => parseInt(p.qty || 0) < 10).length;
+    const [pRes, oRes] = await Promise.all(requests);
 
-    const totalOrders = oRes.data?.data || [];
-    pendingOrdersCount.value = totalOrders.length;
+    const products = pRes.data?.data || [];
+    lowStockCount.value = products.filter(p => parseInt(p.qty, 10) < 10).length;
+
+    if (oRes) {
+      const totalOrders = oRes.data?.data || [];
+      pendingOrdersCount.value = totalOrders.filter(o => o.status?.trim().toLowerCase() === "pending").length;
+    }
   } catch (err) {
     console.error("Sidebar metrics lookup failed:", err);
   }

@@ -273,8 +273,7 @@ const remove = async (id) => {
   try {
     await api.delete(`/products/${id}`);
     await loadInventory();
-    
-    // Boundary structural drop calculation fallback mapping logic
+ 
     if (paginatedProducts.value.length === 0 && currentPage.value > 1) {
       currentPage.value--;
     }

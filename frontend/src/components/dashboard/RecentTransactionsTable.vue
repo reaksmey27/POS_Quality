@@ -11,7 +11,7 @@
     </div>
 
     <div
-      v-if="orders.length === 0"
+      v-if="!orders?.length"
       class="flex flex-col items-center justify-center py-16 text-slate-400 dark:text-slate-500"
     >
       <HistoryIcon class="w-8 h-8 opacity-30 mb-2" />
@@ -37,18 +37,18 @@
 
         <div class="flex items-center gap-3">
           <div
-            :class="getStatusMeta(order?.status)"
+            :class="getStatusMeta(order.status)"
             class="inline-flex items-center px-2.5 py-1 rounded-full border text-[11px] font-bold tracking-wide whitespace-nowrap"
           >
-            {{ getStatusLabel(order?.status) }}
+            {{ getStatusLabel(order.status) }}
           </div>
 
           <div class="w-24 text-right">
             <p class="text-xs font-extrabold text-slate-900 dark:text-white">
-              ${{ safeUsdTotal(order?.total_price) }}
+              ${{ safeUsdTotal(order.total_price) }}
             </p>
             <p class="text-[10px] font-bold text-emerald-600 dark:text-emerald-500">
-              {{ formatRiel(order?.total_price) }} ៛
+              {{ formatRiel(order.total_price) }} ៛
             </p>
           </div>
         </div>
@@ -62,19 +62,36 @@
 <script setup>
 import { HistoryIcon } from "lucide-vue-next";
 
-// -----------------------------------------------------------------------------
-// Component Immutable Ingress
-// -----------------------------------------------------------------------------
 defineProps({
   orders: { type: Array, default: () => [] },
 });
 
-// -----------------------------------------------------------------------------
-// String Formatters & Multi-Currency Converters
-// -----------------------------------------------------------------------------
+const STATUS_CONFIG = {
+  pending: {
+    label: "Pending",
+    classes: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+  },
+  cancelled: {
+    label: "Cancelled",
+    classes: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20"
+  },
+  completed: {
+    label: "Completed",
+    classes: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+  }
+};
+
+const DEFAULT_STATUS = "completed";
+
+// Helpers
+const getNormalizedKey = (status) => {
+  const cleanStatus = typeof status === "string" ? status.trim().toLowerCase() : "";
+  return STATUS_CONFIG[cleanStatus] ? cleanStatus : DEFAULT_STATUS;
+};
+
+// Formatting & Conversion Layer
 const formatRiel = (usdValue) => {
-  const numericUsd = parseFloat(usdValue || 0);
-  // Avoid fractional Riel decimals via explicitly casting to round constraints
+  const numericUsd = parseFloat(usdValue) || 0;
   return Math.round(numericUsd * 4100).toLocaleString();
 };
 
@@ -84,35 +101,19 @@ const safeUsdTotal = (usdValue) => {
 };
 
 const formatTime = (timeString) => {
-  if (!timeString) return "";
+  if (!timeString) return "—:—";
   return new Date(timeString).toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
   });
 };
 
-// -----------------------------------------------------------------------------
-// System Order Lifecycle Metadata Normalization Layers
-// -----------------------------------------------------------------------------
-const normalizeStatus = (status) => {
-  return typeof status === "string" ? status.trim().toLowerCase() : "completed";
-};
-
+// Lifecycle State Visual Mappers
 const getStatusLabel = (status) => {
-  const s = normalizeStatus(status);
-  if (s === "pending") return "Pending";
-  if (s === "cancelled") return "Cancelled";
-  return "Completed";
+  return STATUS_CONFIG[getNormalizedKey(status)].label;
 };
 
 const getStatusMeta = (status) => {
-  const s = normalizeStatus(status);
-  if (s === "pending") {
-    return "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20";
-  }
-  if (s === "cancelled") {
-    return "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20";
-  }
-  return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20";
+  return STATUS_CONFIG[getNormalizedKey(status)].classes;
 };
 </script>

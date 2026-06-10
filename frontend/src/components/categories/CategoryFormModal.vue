@@ -7,26 +7,26 @@
       @submit.prevent="handleSubmit"
       class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-md rounded-xl shadow-xl overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200"
     >
-      
       <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/30 dark:bg-slate-800/10">
         <h3 class="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
-          {{ category ? "Edit Category" : "Add Category" }}
+          {{ isEditMode ? "Edit Category" : "Add Category" }}
         </h3>
         <button 
           type="button"
           :disabled="saving"
           @click="handleCancel" 
           class="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+          aria-label="Close modal"
         >
           <XIcon class="w-5 h-5" />
         </button>
       </div>
 
       <div class="p-6 space-y-4">
-        
         <div 
           v-if="error" 
           class="p-3 bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/40 text-rose-700 dark:text-rose-400 rounded-lg text-sm flex items-start gap-2 animate-in slide-in-from-top-2 duration-100"
+          role="alert"
         >
           <AlertCircleIcon class="w-4 h-4 shrink-0 mt-0.5" />
           <span class="font-medium">{{ error }}</span>
@@ -76,60 +76,55 @@
           {{ saving ? "Saving..." : "Save" }}
         </button>
       </div>
-
     </form>
   </div>
 </template>
 
 <script setup>
-import { reactive, ref, watch, onMounted } from "vue";
+import { reactive, ref, watch, computed } from "vue";
 import api from "@/services/api";
 import { XIcon, AlertCircleIcon, Loader2Icon } from "lucide-vue-next";
 
-// -----------------------------------------------------------------------------
-// Component Inter-Communication Ecosystem
-// -----------------------------------------------------------------------------
+// Component Props & Emits
 const props = defineProps({
   category: { type: Object, default: null }
 });
 
 const emit = defineEmits(["close", "saved"]);
 
-// -----------------------------------------------------------------------------
-// Form Operations State Engine
-// -----------------------------------------------------------------------------
+// Component State
 const saving = ref(false);
 const error = ref("");
 const form = reactive({ name: "", description: "" });
 
-// -----------------------------------------------------------------------------
-// Internal State Synchronizer Functions
-// -----------------------------------------------------------------------------
-const syncFormWithProps = () => {
-  form.name = props.category?.name || "";
-  form.description = props.category?.description || "";
+// Computed State
+const isEditMode = computed(() => !!props.category?.id);
+
+// Synchronizes incoming prop payloads with reactive form values
+const syncFormWithProps = (catData) => {
+  form.name = catData?.name || "";
+  form.description = catData?.description || "";
   error.value = "";
 };
 
-onMounted(() => {
-  syncFormWithProps();
-});
+// Immediate watch handles the initial mount synchronization AND deep change tracking efficiently
+watch(
+  () => props.category,
+  (newCategory) => {
+    syncFormWithProps(newCategory);
+  },
+  { immediate: true }
+);
 
-// Watch contextual update changes down the data structure chain
-watch(() => props.category, () => {
-  syncFormWithProps();
-}, { deep: true });
-
-// -----------------------------------------------------------------------------
-// Operational View Executions & API Mutations
-// -----------------------------------------------------------------------------
+// Actions
 const handleCancel = () => {
   if (saving.value) return;
   emit("close");
 };
 
 const handleSubmit = async () => {
-  if (!form.name.trim()) { 
+  const trimmedName = form.name.trim();
+  if (!trimmedName) { 
     error.value = "Name is required"; 
     return; 
   }
@@ -139,15 +134,16 @@ const handleSubmit = async () => {
   
   try {
     const payload = {
-      name: form.name.trim(),
+      name: trimmedName,
       description: form.description?.trim() || null
     };
 
-    if (props.category?.id) {
+    if (isEditMode.value) {
       await api.put(`/categories/${props.category.id}`, payload);
     } else {
       await api.post("/categories", payload);
     }
+    
     emit("saved");
   } catch (err) {
     error.value = err.response?.data?.message || "An unexpected error occurred while saving";

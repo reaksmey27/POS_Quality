@@ -22,6 +22,11 @@ module.exports = new EntitySchema({
       type: "timestamp",
       createDate: true,
     },
+    status: {
+      type: "varchar",
+      length: 20,
+      default: "completed",
+    },
   },
   relations: {
     cashier: {

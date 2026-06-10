@@ -1,7 +1,7 @@
 <template>
   <div class="p-6 max-w-7xl mx-auto space-y-6 bg-slate-50 dark:bg-slate-950 min-h-screen text-slate-800 dark:text-slate-200 transition-colors">
     
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5 select-none">
       <div>
         <h1 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
           <UsersIcon class="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
@@ -14,20 +14,20 @@
     </div>
 
     <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-      <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 flex items-center gap-2">
+      <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 flex items-center gap-2 select-none">
         <UserPlusIcon class="w-4 h-4 text-slate-500 dark:text-slate-400" />
         <h2 class="font-bold text-slate-800 dark:text-slate-200 text-sm tracking-wide uppercase">Add New System User</h2>
       </div>
 
       <form class="p-6 space-y-5" @submit.prevent="handleCreate">
-        <div v-if="error" class="p-3.5 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-400 rounded-xl text-sm flex items-start gap-2.5">
+        <div v-if="error" class="p-3.5 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-400 rounded-xl text-sm flex items-start gap-2.5 animate-fadeIn">
           <AlertCircleIcon class="w-4 h-4 shrink-0 mt-0.5" />
           <span class="font-medium">{{ error }}</span>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
           <div class="space-y-1.5">
-            <label class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Full Name</label>
+            <label class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider select-none">Full Name</label>
             <input
               v-model.trim="form.name"
               required
@@ -38,7 +38,7 @@
           </div>
 
           <div class="space-y-1.5">
-            <label class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Email Address</label>
+            <label class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider select-none">Email Address</label>
             <input
               v-model.trim="form.email"
               required
@@ -49,7 +49,7 @@
           </div>
 
           <div class="space-y-1.5">
-            <label class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Assigned Role</label>
+            <label class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider select-none">Assigned Role</label>
             <div class="relative">
               <select
                 v-model.number="form.role"
@@ -68,7 +68,7 @@
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-5 items-start">
           <div class="space-y-1.5 md:col-span-2">
-            <label class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Password Access</label>
+            <label class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider select-none">Password Access</label>
             <div class="relative flex items-center">
               <input
                 v-model.trim="form.password"
@@ -91,7 +91,7 @@
             <button
               type="submit"
               :disabled="loading.create"
-              class="w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 dark:disabled:bg-indigo-600/40 text-white text-sm font-semibold shadow-sm transition-colors cursor-pointer disabled:cursor-not-allowed"
+              class="w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 dark:disabled:bg-indigo-600/40 text-white text-sm font-semibold shadow-sm transition-colors cursor-pointer disabled:cursor-not-allowed select-none"
             >
               <Loader2Icon v-if="loading.create" class="w-4 h-4 animate-spin" />
               <UserPlusIcon v-else class="w-4 h-4" />
@@ -103,7 +103,7 @@
     </div>
 
     <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-      <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 flex items-center justify-between gap-4">
+      <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 flex items-center justify-between gap-4 select-none">
         <div class="flex items-center gap-2">
           <ShieldAlertIcon class="w-4 h-4 text-slate-500 dark:text-slate-400" />
           <h2 class="font-bold text-slate-800 dark:text-slate-200 text-sm tracking-wide uppercase">Existing Users Directory</h2>
@@ -123,7 +123,7 @@
         <div class="overflow-x-auto rounded-lg border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950">
           <table class="w-full text-left border-collapse text-sm">
             <thead>
-              <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 text-slate-600 dark:text-slate-400 font-bold uppercase tracking-wider text-[11px]">
+              <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 text-slate-600 dark:text-slate-400 font-bold uppercase tracking-wider text-[11px] select-none">
                 <th class="py-3 px-4 w-16">ID</th>
                 <th class="py-3 px-4">Name String</th>
                 <th class="py-3 px-4">Email Account</th>
@@ -149,12 +149,12 @@
         </div>
       </div>
 
-      <div class="p-16 text-center" v-else>
+      <div class="p-16 text-center select-none" v-else>
         <UsersIcon class="w-10 h-10 text-slate-300 dark:text-slate-700 mx-auto mb-2" />
         <p class="text-sm font-bold text-slate-500 dark:text-slate-400">No organizational profiles discovered.</p>
       </div>
 
-      <div class="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20 flex items-center gap-2">
+      <div class="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20 flex items-center gap-2 select-none">
         <InfoIcon class="w-4 h-4 text-slate-400 dark:text-slate-600 shrink-0" />
         <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">
           Passwords are safely isolated and encrypted. Click "Edit" to modify name fields, communications accounts, or permission credentials.
@@ -183,6 +183,9 @@ import {
 
 import UserRow from "@/components/users/UserRow.vue";
 
+// -----------------------------------------------------------------------------
+// Declarative Framework Core Reactive States Pool
+// -----------------------------------------------------------------------------
 const users = ref([]);
 const error = ref("");
 const showPassword = ref(false);
@@ -198,15 +201,18 @@ const loading = reactive({
   delete: {},
 });
 
+// -----------------------------------------------------------------------------
+// Downstream API Middleware Ingress Handling Processing Loops
+// -----------------------------------------------------------------------------
 const fetchUsers = async () => {
   error.value = "";
   loading.fetch = true;
   try {
     const { data } = await api.get("/users");
-    users.value = data.data || [];
+    users.value = data?.data || [];
     activeEditId.value = null;
   } catch (e) {
-    error.value = e.response?.data?.message || e.message || "Failed to load users";
+    error.value = e.response?.data?.message || e.message || "Failed to parse system operators directory list.";
   } finally {
     loading.fetch = false;
   }
@@ -214,16 +220,26 @@ const fetchUsers = async () => {
 
 const handleCreate = async () => {
   error.value = "";
+  
+  const targetName = form.name?.trim();
+  const targetEmail = form.email?.trim();
+  
+  if (!targetName || !targetEmail) {
+    error.value = "User profile descriptors require valid string inputs.";
+    return;
+  }
+
   loading.create = true;
   try {
     const payload = {
-      name: form.name,
-      email: form.email,
+      name: targetName,
+      email: targetEmail,
       password: form.password ? form.password : defaultPassword,
-      role: form.role,
+      role: Number(form.role),
     };
     await api.post("/users", payload);
 
+    // Document Reset Form Operations Chain
     form.name = "";
     form.email = "";
     form.password = "";
@@ -232,34 +248,39 @@ const handleCreate = async () => {
 
     await fetchUsers();
   } catch (e) {
-    error.value = e.response?.data?.message || e.message || "Failed to create user";
+    error.value = e.response?.data?.message || e.message || "Account profile generation failed.";
   } finally {
     loading.create = false;
   }
 };
 
 const handleUpdate = async (editedFields) => {
+  if (!editedFields || !editedFields.id) return;
+  
   error.value = "";
   loading.update[editedFields.id] = true;
   try {
     const payload = {
-      name: editedFields.name,
-      email: editedFields.email,
-      role: editedFields.role,
+      name: editedFields.name?.trim() || "",
+      email: editedFields.email?.trim() || "",
+      role: Number(editedFields.role),
     };
+    
     await api.put(`/users/${editedFields.id}`, payload);
     activeEditId.value = null;
     await fetchUsers();
   } catch (e) {
-    error.value = e.response?.data?.message || e.message || "Failed to update user";
+    error.value = e.response?.data?.message || e.message || "Failed to persist identity records modification updates.";
   } finally {
     loading.update[editedFields.id] = false;
   }
 };
 
 const handleDelete = async (id) => {
+  if (!id) return;
   error.value = "";
-  const ok = window.confirm("Delete this user? This cannot be undone.");
+  
+  const ok = window.confirm("Are you certain you wish to completely drop this operator? This action cannot be revoked.");
   if (!ok) return;
 
   loading.delete[id] = true;
@@ -267,12 +288,15 @@ const handleDelete = async (id) => {
     await api.delete(`/users/${id}`);
     await fetchUsers();
   } catch (e) {
-    error.value = e.response?.data?.message || e.message || "Failed to delete user";
+    error.value = e.response?.data?.message || e.message || "Database dropped transactional execution sequence.";
   } finally {
     loading.delete[id] = false;
   }
 };
 
+// -----------------------------------------------------------------------------
+// Target Document Mounting Hook Intakes
+// -----------------------------------------------------------------------------
 onMounted(() => {
   fetchUsers();
 });

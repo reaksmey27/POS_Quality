@@ -28,12 +28,12 @@
           <input 
             v-model="search" 
             type="text"
-            @input="currentPage = 1"
+            @input="handleSearchInput"
             class="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-lg shadow-sm text-sm placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-indigo-500 dark:focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors" 
             placeholder="Search categories..." 
           />
         </div>
-        <div class="text-xs font-medium text-slate-500 dark:text-slate-400">
+        <div class="text-xs font-medium text-slate-500 dark:text-slate-400 select-none">
           Showing <span class="font-bold text-slate-800 dark:text-slate-200">{{ filtered.length }}</span> items
         </div>
       </div>
@@ -54,7 +54,7 @@
       <div v-else class="overflow-x-auto">
         <table class="w-full text-left border-collapse text-sm">
           <thead>
-            <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-400 font-bold uppercase tracking-wider text-[11px]">
+            <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-400 font-bold uppercase tracking-wider text-[11px] select-none">
               <th class="py-3 px-6 w-20">ID</th>
               <th class="py-3 px-6">Name</th>
               <th class="py-3 px-6">Description</th>
@@ -73,7 +73,7 @@
         </table>
       </div>
 
-      <div v-if="!loading && filtered.length > 0" class="px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50/30 dark:bg-slate-950/20">
+      <div v-if="!loading && filtered.length > 0" class="px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50/30 dark:bg-slate-950/20 select-none">
         <div class="text-xs text-slate-500 dark:text-slate-400">
           Showing page <span class="font-bold text-slate-800 dark:text-slate-200">{{ currentPage }}</span> of <span class="font-bold text-slate-800 dark:text-slate-200">{{ totalPages }}</span>
         </div>
@@ -148,6 +148,9 @@ import {
 import CategoryRow from "@/components/categories/CategoryRow.vue";
 import CategoryFormModal from "@/components/categories/CategoryFormModal.vue";
 
+// -----------------------------------------------------------------------------
+// Reactive Component State Variables Pools
+// -----------------------------------------------------------------------------
 const categories = ref([]);
 const loading = ref(false);
 const showModal = ref(false);
@@ -157,11 +160,18 @@ const search = ref("");
 const currentPage = ref(1);
 const itemsPerPage = ref(8);
 
+// -----------------------------------------------------------------------------
+// Computed Processing Filters & Slice Pagination Trees
+// -----------------------------------------------------------------------------
 const filtered = computed(() => {
-  return categories.value.filter((c) => 
-    c.name.toLowerCase().includes(search.value.toLowerCase()) ||
-    (c.description && c.description.toLowerCase().includes(search.value.toLowerCase()))
-  );
+  const token = search.value.trim().toLowerCase();
+  if (!token) return categories.value;
+  
+  return categories.value.filter((c) => {
+    const matchName = c.name?.toLowerCase().includes(token);
+    const matchDesc = c.description?.toLowerCase().includes(token);
+    return matchName || matchDesc;
+  });
 });
 
 const totalPages = computed(() => {
@@ -173,6 +183,13 @@ const paginatedCategories = computed(() => {
   const end = start + itemsPerPage.value;
   return filtered.value.slice(start, end);
 });
+
+// -----------------------------------------------------------------------------
+// Handlers & Mutator Actions Routines
+// -----------------------------------------------------------------------------
+const handleSearchInput = () => {
+  currentPage.value = 1;
+};
 
 const openFormModal = (category = null) => {
   selectedCategory.value = category;
@@ -190,29 +207,35 @@ const handleCategorySaveSuccess = async () => {
 };
 
 const removeCategory = async (id) => {
-  if (!confirm("Delete this category?")) return;
+  if (!confirm("Are you sure you want to delete this category?")) return;
   try { 
     await api.delete(`/categories/${id}`); 
     await loadCategories(); 
     
-    if (paginatedCategories.value.length === 0 && currentPage.value > 1) {
-      currentPage.value--;
+    // Safety Fallback Guard: Adjust bounding scope step backwards if index target is lost
+    if (currentPage.value > totalPages.value) {
+      currentPage.value = totalPages.value;
     }
   } catch (err) { 
-    alert(err.response?.data?.message || "Failed to delete category"); 
+    alert(err.response?.data?.message || "Failed to complete processing operations logic for data entry deletion."); 
   }
 };
 
 const loadCategories = async () => {
   loading.value = true;
   try { 
-    categories.value = (await api.get("/categories")).data.data; 
+    const response = await api.get("/categories");
+    categories.value = response.data?.data || []; 
   } catch (err) {
     console.error("Failed loading categories dataset repository:", err);
+    categories.value = [];
   } finally { 
     loading.value = false; 
   }
 };
 
+// -----------------------------------------------------------------------------
+// Life-cycle Ingress Initializations Hooks
+// -----------------------------------------------------------------------------
 onMounted(loadCategories);
 </script>

@@ -1,7 +1,7 @@
 const orderService = require("../services/orderService");
 
 // Helper to handle async route handlers and eliminate try-catch boilerplate
-const asyncHandler = (fn) => (req, res, next) => 
+const asyncHandler = (fn) => (req, res, next) =>
   Promise.resolve(fn(req, res, next)).catch(next);
 
 const create = asyncHandler(async (req, res) => {
@@ -9,7 +9,9 @@ const create = asyncHandler(async (req, res) => {
   const cashier_id = req.user.id;
 
   if (!items || items.length === 0) {
-    return res.status(400).json({ message: "Order must contain at least one item" });
+    return res
+      .status(400)
+      .json({ message: "Order must contain at least one item" });
   }
 
   const data = await orderService.createOrder({ items, cashier_id });
@@ -29,4 +31,21 @@ const getById = asyncHandler(async (req, res) => {
   res.json({ data });
 });
 
-module.exports = { create, getAll, getById };
+const getRecentCompleted = asyncHandler(async (req, res) => {
+  const limit = Math.max(1, parseInt(req.query.limit || "10", 10));
+  const data = await orderService.getRecentCompleted({ limit });
+  res.json({ data });
+});
+
+const getHourlySalesToday = asyncHandler(async (req, res) => {
+  const data = await orderService.getHourlySalesToday();
+  res.json({ data });
+});
+
+module.exports = {
+  create,
+  getAll,
+  getById,
+  getRecentCompleted,
+  getHourlySalesToday,
+};

@@ -6,7 +6,13 @@
 
     <main class="flex-1 md:pl-64 min-w-0 transition-all">
       <div class="min-h-screen">
-        <RouterView />
+        <TopNavbar />
+        <!-- Spacer under navbar (adjusted to reduce extra gap) -->
+        <div>
+          <div class="px-4 sm:px-6 py-6">
+            <RouterView />
+          </div>
+        </div>
       </div>
     </main>
   </div>
@@ -16,6 +22,7 @@
 import { RouterView, useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth.store";
 import AppSidebar from "@/components/layout/AppSidebar.vue";
+import TopNavbar from "@/components/layout/TopNavbar.vue";
 
 const auth = useAuthStore();
 const router = useRouter();

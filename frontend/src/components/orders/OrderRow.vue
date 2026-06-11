@@ -1,7 +1,7 @@
 <template>
   <tr class="hover:bg-slate-50/70 dark:hover:bg-slate-800/30 transition-colors duration-100 group">
     <td class="py-3.5 px-6 font-mono text-xs text-slate-400 dark:text-slate-500">
-      #{{ order.id }}
+      {{ order.id }}
     </td>
 
     <td class="py-3.5 px-6 text-slate-600 dark:text-slate-400 text-sm whitespace-nowrap">

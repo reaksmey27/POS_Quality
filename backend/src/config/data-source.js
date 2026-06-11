@@ -6,6 +6,7 @@ const Category = require("../entities/Category");
 const Product = require("../entities/Product");
 const Order = require("../entities/Order");
 const OrderItem = require("../entities/OrderItem");
+const Notification = require("../entities/Notification");
 
 const AppDataSource = new DataSource({
   type: "mysql",
@@ -16,7 +17,7 @@ const AppDataSource = new DataSource({
   database: process.env.DB_NAME || "pos_system",
   synchronize: true,
   logging: true,
-  entities: [User, Category, Product, Order, OrderItem],
+  entities: [User, Category, Product, Order, OrderItem, Notification],
 });
 
 module.exports = { AppDataSource };
